@@ -2,9 +2,9 @@
   "name": "manage-cc",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "next dev -p 8080",
+    "build": "next build ",
+    "start": "next start -p 8080",
     "lint": "next lint"
   },
   "dependencies": {
@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "eslint": "8.13.0",
-    "eslint-config-next": "12.1.4"
+    "eslint-config-next": "12.1.4",
+    "mongodb": "^4.5.0"
   }
 }
