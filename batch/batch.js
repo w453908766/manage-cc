@@ -1,5 +1,5 @@
 let { MongoClient } = require('mongodb')
-let { mongodbUrl } = require('../config.json')
+let { mongodbUrl } = require('../backConfig.json')
 
 
 async function removeShort() {
