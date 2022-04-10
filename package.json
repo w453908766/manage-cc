@@ -13,9 +13,9 @@
     "react-dom": "18.0.0"
   },
   "devDependencies": {
-    "axios": "^0.26.1",
     "eslint": "8.13.0",
     "eslint-config-next": "12.1.4",
-    "mongodb": "^4.5.0"
+    "mongodb": "^4.5.0",
+    "node-libcurl": "^2.3.4"
   }
 }
