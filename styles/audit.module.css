@@ -1,0 +1,34 @@
+.pageItem {
+    display: flex;
+    flex-direction: row;
+}
+
+.thumbnail {
+    width: 240px;
+}
+
+.title {
+    font-size: 20px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.description {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.category_keywords {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.category {
+    margin-right: 2rem;
+}

@@ -1,5 +1,0 @@
-{
-    "mongodbUrl": "mongodb://localhost",
-    "curlOption": {},
-    "port": 8080
-}

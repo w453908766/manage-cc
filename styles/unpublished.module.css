@@ -1,9 +1,0 @@
-.pageItem {
-    display: flex;
-    flex-direction: row;
-}
-
-.thumbnail {
-    width: 240px;
-    height: 180px;
-}
