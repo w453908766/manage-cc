@@ -13,13 +13,24 @@ async function existPage1(i) {
         throw html
     }
 }
+async function translate(i) {
+    let enline = 'Shinkansen%3A%20Japan%27s%20High%20Speed%20Rail%20System%20Explained'
+    let url = `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=auto&tl=zh-CN&q=${enline}`
+    let req = await proxyFetch(url)
+    let ans = req[0][0][0]
 
+    if (ans.startsWith("新干线")) {
+        console.log("succ", i)
+    } else {
+        throw req
+    }
+}
 async function kkk() {
     let sema = new Sema(threadNum);
     try {
         for (let i = 0; i < 1000; i++) {
             await sema.acquire()
-            existPage1(i).then(() => sema.release())
+            translate(i).then(() => sema.release())
         }
     } catch (html) {
         console.log(html)
