@@ -25,6 +25,7 @@ async function handle(transMap, transStateMap, item, trans) {
         await transStateMap.updateOne({ vid, languageCode }, { $set: { status: 'conflict' } }, { upsert: true })
     } else {
         await transMap.updateOne({ vid, languageCode }, { $set: newMassage }, { upsert: true })
+        await transStateMap.updateOne({ vid, languageCode }, { $set: { status: 'ready' } }, { upsert: true })
     }
 }
 
