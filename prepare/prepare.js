@@ -11,40 +11,37 @@ async function existPage1(vid, title) {
     return exist
 }
 
-async function handle(transMap, transStateMap, item, trans) {
-    let { vid, languageCode } = trans
-    if (await transStateMap.findOne({ vid, languageCode })) {
-        console.log(`trans has been processed`)
+async function handle(transMap, transStateMap, page, ctrack) {
+    let { vid, languageCode } = ctrack
+    if (await transStateMap.findOne(ctrack)) {
+        console.log(`trans has been processed ${ctrack}`)
         return
     }
 
-    let newMassage = await translateMassage(item, 'auto', languageCode)
+    let newMassage = await translateMassage(page, 'auto', languageCode)
+    await transMap.updateOne(ctrack, { $set: newMassage }, { upsert: true })
 
     let exist = await existPage1(vid, newMassage.title)
-    if (exist) {
-        await transStateMap.updateOne({ vid, languageCode }, { $set: { status: 'conflict' } }, { upsert: true })
-    } else {
-        await transMap.updateOne({ vid, languageCode }, { $set: newMassage }, { upsert: true })
-        await transStateMap.updateOne({ vid, languageCode }, { $set: { status: 'ready' } }, { upsert: true })
-    }
+    let status = exist ? 'conflict' : 'ready'
+    await transStateMap.updateOne(ctrack, { $set: { status } }, { upsert: true })
 }
 
-async function prepare(transMap, transStateMap, item) {
-    let { vid, isCCLisence } = item
+async function prepare(transMap, transStateMap, page) {
+    let { vid, isCCLisence } = page
     if (!isCCLisence) throw "This video is not Creative Commons Attribution licensed"
 
-    await prepareMainLang(transMap, item.vid)
+    await prepareMainLang(transMap, page.vid)
 
     let cursor = transMap.find({ vid }).project({ _id: 0, vid: 1, languageCode: 1 })
-    for await (let trans of cursor) {
-        await handle(transMap, transStateMap, item, trans)
+    for await (let ctrack of cursor) {
+        await handle(transMap, transStateMap, page, ctrack)
     }
 }
 
-async function prepare0(transMap, transStateMap, item) {
-    let { vid } = item
+async function prepare0(transMap, transStateMap, page) {
+    let { vid } = page
     try {
-        await prepare(transMap, transStateMap, item)
+        await prepare(transMap, transStateMap, page)
         console.log(`prepare ${vid}`)
 
     } catch (err) {
@@ -64,10 +61,10 @@ async function prepareAll() {
     let cursor = pageMap.find()
     cursor.skip(processed)
 
-    for await (let item of cursor) {
+    for await (let page of cursor) {
         console.log(`handle ${processed}`)
         processed++
-        await prepare0(transMap, transStateMap, item)
+        await prepare0(transMap, transStateMap, page)
         await cursorMap.updateOne({ task: "prepare" }, { $set: { processed } }, { upsert: true })
     }
     await db.close();
