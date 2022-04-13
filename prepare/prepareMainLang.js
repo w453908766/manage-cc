@@ -18,9 +18,10 @@ async function translateLang(transMap, srcLangCode, srcTranscript, vid, lang) {
     if (await transMap.findOne({ vid, lang }) === null) {
         try {
             let transcript = await translateTranscript(srcTranscript, srcLangCode, lang)
-            await transMap.insertOne({ vid, languageCode: lang, transcript })
+            await transMap.updateOne({ vid, languageCode: lang }, { $set: { transcript } }, { upsert: true })
+
         } catch (err) {
-            console.log(`translate transcript error: ${vid} ${srcLangCode} -> ${lang}`)
+            console.log(`translate transcript error: ${vid} ${srcLangCode} -> ${lang}, ${err}`)
         }
     }
 }
@@ -45,8 +46,8 @@ async function f() {
     let db = await MongoClient.connect(mongodbUrl)
     let database = db.db("youtube-cc");
     let transMap = database.collection("transMap")
-    let { transcript: srcTranscript } = await transMap.findOne({ vid: "IV0ifQAEQ0A", languageCode: "en" })
-    let transcript = await translateTranscript(srcTranscript, "en", "zh-CN")
+    let { transcript: srcTranscript } = await transMap.findOne({ vid: "uOwfC3BiTqc", languageCode: "en" })
+    let transcript = await translateTranscript(srcTranscript, "en", "ja")
 
     console.log(srcTranscript)
     console.log(transcript)
@@ -54,5 +55,15 @@ async function f() {
     await db.close();
 }
 
-f()
+//f()
+
+async function g() {
+    let db = await MongoClient.connect(mongodbUrl)
+    let database = db.db("youtube-cc");
+    let transMap = database.collection("transMap")
+    await prepareMainLang(transMap, "uOwfC3BiTqc")
+    db.close()
+}
+
+g()
 */

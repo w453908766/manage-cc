@@ -2,46 +2,54 @@ let { MongoClient } = require('mongodb')
 let { mongodbUrl } = require('../backConfig.json')
 let { prepareMainLang } = require('./prepareMainLang')
 let { translateMassage } = require('./translateMassage')
-let { proxyFetch } = require('../lib/backUtils')
+let { proxyFetch, proxyFetchTime } = require('../lib/backUtils')
 
 async function existPage1(vid, title) {
     let url = `https://www.google.com/search?q=${encodeURIComponent(title)}`
-    let html = await proxyFetch(url)
+    let html = await proxyFetchTime(url, 10)
     let exist = html.indexOf(vid) !== -1
     return exist
 }
 
-async function handle(transMap, transStateMap, page, ctrack) {
-    let { vid, languageCode } = ctrack
-    if (await transStateMap.findOne(ctrack)) {
-        console.log(`trans has been processed ${ctrack}`)
+async function handle(transMap, page, ctrack) {
+    let { vid, languageCode, status } = ctrack
+    if (status !== undefined) {
+        console.log(`captionTrack has been processed ${vid} ${languageCode}`)
         return
     }
 
-    let newMassage = await translateMassage(page, 'auto', languageCode)
-    await transMap.updateOne(ctrack, { $set: newMassage }, { upsert: true })
+    try {
+        let newMassage = await translateMassage(page, 'auto', languageCode)
+        let exist = await existPage1(vid, newMassage.title)
+        let newStatus = exist ? -1 : 1
+        let newMsg = {...newMassage, status: newStatus }
 
-    let exist = await existPage1(vid, newMassage.title)
-    let status = exist ? 'conflict' : 'ready'
-    await transStateMap.updateOne(ctrack, { $set: { status } }, { upsert: true })
+        await transMap.updateOne(ctrack, { $set: newMsg }, { upsert: true })
+    } catch (err) {
+        if (err.toString() === "same language") {
+            await transMap.updateOne(ctrack, { $set: { status: -1 } }, { upsert: true })
+        } else {
+            throw err
+        }
+    }
 }
 
-async function prepare(transMap, transStateMap, page) {
+async function prepare(transMap, page) {
     let { vid, isCCLisence } = page
     if (!isCCLisence) throw "This video is not Creative Commons Attribution licensed"
 
     await prepareMainLang(transMap, page.vid)
 
-    let cursor = transMap.find({ vid }).project({ _id: 0, vid: 1, languageCode: 1 })
+    let cursor = transMap.find({ vid }).project({ _id: 0, vid: 1, languageCode: 1, status: 1 })
     for await (let ctrack of cursor) {
-        await handle(transMap, transStateMap, page, ctrack)
+        await handle(transMap, page, ctrack)
     }
 }
 
-async function prepare0(transMap, transStateMap, page) {
+async function prepare0(transMap, page) {
     let { vid } = page
     try {
-        await prepare(transMap, transStateMap, page)
+        await prepare(transMap, page)
         console.log(`prepare ${vid}`)
 
     } catch (err) {
@@ -54,7 +62,6 @@ async function prepareAll() {
     let database = db.db("youtube-cc");
     let pageMap = database.collection("pageMap")
     let transMap = database.collection("transMap")
-    let transStateMap = database.collection("transStateMap")
 
     let cursorMap = database.collection("cursorMap")
     let { processed } = await cursorMap.findOne({ task: "prepare" })
@@ -64,7 +71,7 @@ async function prepareAll() {
     for await (let page of cursor) {
         console.log(`handle ${processed}`)
         processed++
-        await prepare0(transMap, transStateMap, page)
+        await prepare0(transMap, page)
         await cursorMap.updateOne({ task: "prepare" }, { $set: { processed } }, { upsert: true })
     }
     await db.close();
