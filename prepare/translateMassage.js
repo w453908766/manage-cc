@@ -1,11 +1,12 @@
-let { proxyFetch } = require('../lib/backUtils')
+let { proxyFetch, splitArray } = require('../lib/backUtils')
 
 
 function combineMassage({ title, keywords, description }) {
     let separator = '-------------'
+    let title0 = title.split(':')
     let keywords0 = keywords || []
     let description0 = description ? description.substr(0, 5000) : ''
-    let pack = [title, ...keywords0, separator, description0].join('\n')
+    let pack = [...title0, separator, ...keywords0, separator, description0].join('\n')
     let enline = encodeURIComponent(pack)
     return enline
 }
@@ -14,11 +15,12 @@ function combineMassage({ title, keywords, description }) {
 
 function splitMassage(relines) {
     let separator = '-------------'
-    let sepIndex = relines.indexOf(separator)
-    let newTitle = relines[0]
-    let newKeywords = relines.slice(1, sepIndex)
-    let newDescription = relines.slice(sepIndex + 1).join(' ')
-    return { title: newTitle, keywords: newKeywords, description: newDescription }
+    let [title0, keywords0, description0] = splitArray(relines, separator)
+
+    let title = title0.join(': ')
+    let keywords = keywords0
+    let description = description0.join(' ')
+    return { title, keywords, description }
 }
 
 async function translate(enline, srcLang, desLang) {
@@ -39,10 +41,3 @@ module.exports = { translateMassage }
 
 //let massage = { title: "quantum computing", keywords: null, description: null }
 //translateMassage(massage, "auto", "zh-CN").then((r) => console.log(r))
-
-let massage = {
-        "title": "Earth Optics Video 3: Fast & Slow Ray",
-        "keywords": ["mineralogy", "optical microscopy", "earth materials", "geoscience education", "geology", "fast and slow ray", "accessory plate", "gypsum plate", "retardation", "interference color", "extinction angle"],
-        "description": "In this video, I introduce the concept of light propogating through minerals as a faster and slower ray. Examples use the accessory plate to determine orientation of a faster and slower ray.\n\nFor supplemental questions and resources, please check out my webpage at www.earthopticsmineralogy.com\n\nAccessory Plate Image:\nhttp://micro.magnet.fsu.edu/primer/techniques/polarized/images/firstorderfigure1.jpg\n\nMichel-Levy Chart:\nUniversity of Liverpool. D Flinn G Newell"
-    }
-    //translateMassage(massage, "auto", "de").then((r) => console.log(r))
