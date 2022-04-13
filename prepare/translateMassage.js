@@ -35,7 +35,14 @@ async function translateMassage(massage, srcLang, desLang) {
     let relines = await translate(enline, srcLang, desLang)
     let newMassage = splitMassage(relines)
     return newMassage
-
 }
 
-module.exports = { translateMassage }
+async function translateTitle(title) {
+    let enline = encodeURIComponent(title)
+    let url = `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=auto&tl=zh-CN&q=${enline}`
+    let req = await proxyFetch(url)
+    let zhTitle = req[0].map((line) => line[0].trim()).join(' ')
+    return { languageCode: req[2], zhTitle }
+}
+
+module.exports = { translateMassage, translateTitle }

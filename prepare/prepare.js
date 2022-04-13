@@ -1,7 +1,7 @@
 let { MongoClient } = require('mongodb')
 let { mongodbUrl, env } = require('../backConfig.json')
 let { prepareMainLang, makeTranscriptTranslator } = require('./prepareMainLang')
-let { translateMassage } = require('./translateMassage')
+let { translateMassage, translateTitle } = require('./translateMassage')
 let { proxyFetch, proxyFetchTime } = require('../lib/backUtils')
 
 async function existPage1(vid, title) {
@@ -32,9 +32,14 @@ async function handle(transMap, page, ctrack) {
     }
 }
 
-async function prepare(transMap, page) {
-    let { vid, isCCLisence } = page
+
+
+async function prepare(pageMap, transMap, page) {
+    let { vid, title, isCCLisence } = page
     if (!isCCLisence) throw "have not Creative Commons Attribution licensed"
+
+    let { languageCode, zhTitle } = await translateTitle(title)
+    await pageMap.updateOne({ vid }, { $set: { languageCode, zhTitle, status: 1 } }, { upsert: true })
 
     await prepareMainLang(transMap, vid)
     let transcriptTranslator = await makeTranscriptTranslator(transMap, vid)
@@ -48,10 +53,10 @@ async function prepare(transMap, page) {
     await promise
 }
 
-async function prepare0(transMap, page) {
+async function prepare0(pageMap, transMap, page) {
     let { vid } = page
     try {
-        await prepare(transMap, page)
+        await prepare(pageMap, transMap, page)
         console.log(`prepare ${vid}`)
 
     } catch (err) {
@@ -76,7 +81,7 @@ async function prepareAll() {
     for await (let page of cursor) {
         console.log(`handle ${processed}`)
         processed++
-        await prepare0(transMap, page)
+        await prepare0(pageMap, transMap, page)
         await cursorMap.updateOne({ task: "prepare" }, { $set: { processed } }, { upsert: true })
     }
     await db.close();
