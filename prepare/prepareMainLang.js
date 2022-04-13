@@ -12,31 +12,37 @@ function getMainLang(existLangs) {
     return existLangs[0]
 }
 
-let effectLangs = ['es', 'ja', 'pt', 'de', 'ar', 'fr', 'ru', 'ko', 'tl']
 
-async function translateLang(transMap, srcLangCode, srcTranscript, vid, lang) {
-    if (await transMap.findOne({ vid, lang }) === null) {
+async function translateLang(transMap, srcLangCode, srcTranscript, vid, languageCode) {
+    let ctrack = await transMap.findOne({ vid, languageCode })
+    if (ctrack.status === 1 && ctrack.transcript === undefined) {
         try {
-            let transcript = await translateTranscript(srcTranscript, srcLangCode, lang)
-            await transMap.updateOne({ vid, languageCode: lang }, { $set: { transcript } }, { upsert: true })
+            let transcript = await translateTranscript(srcTranscript, srcLangCode, languageCode)
+            await transMap.updateOne({ vid, languageCode }, { $set: { transcript } }, { upsert: true })
 
         } catch (err) {
-            console.log(`translate transcript error: ${vid} ${srcLangCode} -> ${lang}, ${err}`)
+            console.log(`translate transcript error: ${vid} ${srcLangCode} -> ${languageCode}, ${err}`)
         }
     }
 }
 
-async function prepareMainLang(transMap, vid) {
+async function makeTranscriptTranslator(transMap, vid) {
     let existLangs = await transMap.find({ vid }).project({ _id: 0, languageCode: 1 }).map(({ languageCode }) => languageCode).toArray()
     let srcLangCode = getMainLang(existLangs)
-
     let { transcript: srcTranscript } = await transMap.findOne({ vid, languageCode: srcLangCode })
 
-    let ps = effectLangs.map((lang) => translateLang(transMap, srcLangCode, srcTranscript, vid, lang))
-    await Promise.all(ps)
+    return (languageCode) => translateLang(transMap, srcLangCode, srcTranscript, vid, languageCode)
 }
 
-module.exports = { prepareMainLang }
+let effectLangs = ['es', 'ja', 'pt', 'de', 'ar', 'fr', 'ru', 'ko', 'tl']
+
+async function prepareMainLang(transMap, vid) {
+    for (let languageCode of effectLangs) {
+        await transMap.updateOne({ vid, languageCode }, { $set: {} }, { upsert: true })
+    }
+}
+
+module.exports = { prepareMainLang, makeTranscriptTranslator }
 
 /*
 let { MongoClient } = require('mongodb')
