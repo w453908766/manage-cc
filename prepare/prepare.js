@@ -19,6 +19,8 @@ async function handle(transMap, prevMassage, ctrack) {
     }
 
     try {
+        if (languageCode === 'en') throw "skip English"
+
         let newMassage = await translateMassage(prevMassage, 'auto', languageCode)
         let { title } = newMassage
         let exist = await existPage1(vid, title)
