@@ -34,7 +34,7 @@ async function makeTranscriptTranslator(transMap, vid) {
     return (languageCode) => translateLang(transMap, srcLangCode, srcTranscript, vid, languageCode)
 }
 
-let effectLangs = ['es', 'ja', 'pt', 'de', 'ar', 'fr', 'ru', 'ko', 'tl']
+let effectLangs = ['ja', 'es', 'pt', 'ko', 'ar', 'fr', 'ru', 'de']
 
 async function prepareMainLang(transMap, vid) {
     for (let languageCode of effectLangs) {

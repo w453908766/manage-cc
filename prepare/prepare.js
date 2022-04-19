@@ -11,24 +11,26 @@ async function existPage1(vid, title) {
     return exist
 }
 
-async function handle(transMap, page, ctrack) {
+async function handle(transMap, prevMassage, ctrack) {
     let { vid, languageCode } = ctrack
     if (ctrack.status !== undefined) {
         console.log(`captionTrack has been processed ${vid} ${languageCode}`)
-        return
+        return prevMassage
     }
 
     try {
-        let newMassage = await translateMassage(page, 'auto', languageCode)
+        let newMassage = await translateMassage(prevMassage, 'auto', languageCode)
         let { title } = newMassage
         let exist = await existPage1(vid, title)
         if (exist) throw `title conflict: ${title}`
 
         let newMsg = {...newMassage, status: 1 }
         await transMap.updateOne(ctrack, { $set: newMsg }, { upsert: true })
+        return newMassage
     } catch (err) {
         await transMap.updateOne(ctrack, { $set: { status: -1 } }, { upsert: true })
         console.log(`${vid} ${languageCode} ${err}`)
+        return prevMassage
     }
 }
 
@@ -45,9 +47,11 @@ async function prepare(pageMap, transMap, page) {
     let transcriptTranslator = await makeTranscriptTranslator(transMap, vid)
 
     let cursor = transMap.find({ vid }).project({ _id: 0, vid: 1, languageCode: 1, status: 1 })
+
     let promise = null
+    let prevMassage = page
     for await (let ctrack of cursor) {
-        await handle(transMap, page, ctrack)
+        prevMassage = await handle(transMap, prevMassage, ctrack)
         promise = transcriptTranslator(ctrack.languageCode)
     }
     await promise

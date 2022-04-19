@@ -31,6 +31,7 @@ async function translate(enline, srcLang, desLang) {
 }
 
 async function translateMassage(massage, srcLang, desLang) {
+
     let enline = combineMassage(massage)
     let relines = await translate(enline, srcLang, desLang)
     let newMassage = splitMassage(relines)
