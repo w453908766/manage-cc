@@ -1,19 +1,21 @@
 import { MongoClient } from 'mongodb'
 import config from '../../backConfig.json'
 
-async function upload(uploadMap) {
+async function upload({ host, checkedMap }) {
     let db = await MongoClient.connect(config.mongodbUrl)
     let database = db.db("youtube-cc");
     let pageMap = database.collection("pageMap")
     let transMap = database.collection("transMap")
 
-    for (let key in uploadMap) {
-        let checked = uploadMap[key]
-        let [vid, languageCode] = key.split(' ')
-        await pageMap.updateOne({ vid }, { $set: { status: 2 } }, { upsert: true })
+    for (let key in checkedMap) {
+        let checked = checkedMap[key]
+        if (checked) {
+            let [vid, languageCode] = key.split(' ')
+            await pageMap.updateOne({ vid }, { $set: { status: 2 } })
 
-        let status = checked ? 2 : -2;
-        await transMap.updateOne({ vid, languageCode }, { $set: { status } }, { upsert: true })
+            let up = { status: 2, host, uploadDate: new Date() }
+            await transMap.updateOne({ vid, languageCode }, { $set: up })
+        }
     }
 
     await db.close()

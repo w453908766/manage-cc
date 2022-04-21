@@ -14,9 +14,9 @@ function DomainSelect({ host, setHost }) {
     )
 }
 
-function upload(checkedMap) {
+function upload(host, checkedMap) {
     return async function (event) {
-        let res = await post(`${config.domain}/api/upload`, checkedMap)
+        let res = await post(`${config.domain}/api/upload`, {host, checkedMap})
         console.log(res)
         return res
     }
@@ -28,7 +28,7 @@ export function ControlBar() {
     return (
         <div>
             <DomainSelect host={host} setHost={setHost} />
-            <button onClick={upload(checkedMap)}>Upload</button>
+            <button onClick={upload(host, checkedMap)}>Upload</button>
             <button>Delete</button>
         </div>
     )

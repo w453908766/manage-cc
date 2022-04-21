@@ -7,12 +7,13 @@ async function audit() {
     let pageMap = database.collection("pageMap")
     let transMap = database.collection("transMap")
 
-    let cursor = pageMap.find().limit(2)
+    let cursor = pageMap.find({ status: 1 }).limit(2)
     let pages = []
     for await (let page of cursor) {
         let { vid } = page
         let column = { _id: 0, vid: 1, languageCode: 1, status: 1, title: 1 }
-        let ctracks = await transMap.find({ vid, languageCode: { $ne: "en" } }).project(column).toArray()
+        let cond = { vid, languageCode: { $ne: "en" }, transcript: { $ne: null } }
+        let ctracks = await transMap.find(cond).project(column).toArray()
         pages.push({...page, ctracks })
     }
 
