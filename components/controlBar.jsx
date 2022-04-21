@@ -5,30 +5,33 @@ import { AuditContext } from './auditContext'
 import domains from '../domains.json'
 import { post } from '../lib/utils'
 
-function DomainSelect({ host, setHost }) {
-    function change(event) { setHost(event.target.value) }
+function DomainSelect({ index, setIndex }) {
+    function change(event) { setIndex(event.target.value)}
     return (
-        <select value={host} onChange={change}>
-            {domains.map((d) => <option key={d.host}>{d.host}</option>)}
+        <select value={index} onChange={change}>
+            {domains.map((d,i) => <option key={i} value={i}>{d.host}</option>)}
         </select>
     )
 }
 
-function upload(host, checkedMap) {
+function upload(domain, checkedMap) {
     return async function (event) {
-        let res = await post(`${config.domain}/api/upload`, {host, checkedMap})
+        let res = await post(`${config.domain}/api/upload`, {host:domain.host, checkedMap})
+        await fetch(`https://www.google.com/ping?sitemap=${domain.domain}/sitemap.xml`)
         console.log(res)
         return res
     }
 }
 
 export function ControlBar() {
-    let [host, setHost] = useState(domains[0].host)
-    let { checkedMap } = useContext(AuditContext);
+    let [domainIndex, setDomainIndex] = useState(0)
+    let domain = domains[domainIndex]
+
+    let { checkedMap } = useContext(AuditContext)
     return (
         <div>
-            <DomainSelect host={host} setHost={setHost} />
-            <button onClick={upload(host, checkedMap)}>Upload</button>
+            <DomainSelect index={domainIndex} setIndex={setDomainIndex} />
+            <button onClick={upload(domain, checkedMap)}>Upload</button>
             <button>Delete</button>
         </div>
     )
