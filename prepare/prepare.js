@@ -88,7 +88,8 @@ async function prepareAll() {
         console.log(`handle ${processed}`)
         processed++
         await prepare0(pageMap, transMap, page)
-        await cursorMap.updateOne({ task: "prepare" }, { $set: { processed } }, { upsert: true })
+        let date = new Date();
+        await cursorMap.updateOne({ task: "prepare" }, { $set: { processed, date } }, { upsert: true })
     }
     await db.close();
 }
