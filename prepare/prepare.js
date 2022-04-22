@@ -71,18 +71,10 @@ async function prepare0(pageMap, transMap, page) {
     }
 }
 
-async function prepareAll0() {
-    let db = await MongoClient.connect(mongodbUrl)
-    let database = db.db("youtube-cc");
-    let pageMap = database.collection("pageMap")
-    let transMap = database.collection("transMap")
-
-    let cursorMap = database.collection("cursorMap")
+async function loop(cursorMap, pageMap, transMap) {
     let { processed } = await cursorMap.findOne({ task: "prepare" })
-
-    let cursor = pageMap.find({}, { timeout: false })
-
     if (env === 'develop') processed = 0
+    let cursor = pageMap.find({}, { timeout: false })
     cursor.skip(processed)
 
     for await (let page of cursor) {
@@ -92,11 +84,21 @@ async function prepareAll0() {
         let date = new Date();
         await cursorMap.updateOne({ task: "prepare" }, { $set: { processed, date } }, { upsert: true })
     }
-    await db.close();
 }
 
-function prepareAll() {
-    prepareAll0().catch((err) => console.log(err))
+async function prepareAll() {
+    let db = await MongoClient.connect(mongodbUrl)
+    let database = db.db("youtube-cc");
+    let pageMap = database.collection("pageMap")
+    let transMap = database.collection("transMap")
+
+    let cursorMap = database.collection("cursorMap")
+
+    try {
+        await loop(cursorMap, pageMap, transMap)
+    } finally {
+        await db.close();
+    }
 }
 
 prepareAll()
